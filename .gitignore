@@ -1,0 +1,24 @@
+# Python / virtualenv
+__pycache__/
+*.pyc
+offline/.venv/
+
+# Offline exports
+offline/model_export/
+
+# e2 studio build outputs
+**/Debug/
+**/Release/
+**/*.hex
+**/*.map
+**/*.elf
+**/*.srec
+**/*.lst
+**/*.o
+**/*.d
+
+# OS/editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

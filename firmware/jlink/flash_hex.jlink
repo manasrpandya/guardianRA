@@ -1,0 +1,9 @@
+device R7FA8D1BH
+if SWD
+speed 4000
+r
+h
+loadfile /ABSOLUTE/PATH/TO/your_build/Debug/guardianRA.hex
+r
+g
+q
