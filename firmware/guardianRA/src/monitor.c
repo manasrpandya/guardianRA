@@ -56,8 +56,11 @@ static float ring_avg(const ringf_t *rb)
 
 static unsigned long systime_ms(void)
 {
-    /* tm_systim_l: platform-provided tick; treat as milliseconds for logging */
-    return (unsigned long)(tm_systim_l() & 0xFFFFFFFFu);
+    /* Portable µT‑Kernel time: tk_get_tim() */
+    SYSTIM t;
+    tk_get_tim(&t);
+    /* If t.lo is already milliseconds in your config, return (unsigned long)t.lo */
+    return (unsigned long)(t.lo / 1000u);
 }
 
 static void print_csv_header_if_needed(void)
