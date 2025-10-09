@@ -4,7 +4,9 @@
 
 static inline unsigned long systime_ms_local(void)
 {
-    return (unsigned long)(tm_systim_l() & 0xFFFFFFFFu);
+    SYSTIM t;
+    tk_get_tim(&t);
+    return (unsigned long)(t.lo / 1000u);
 }
 
 void diag_init(void)
