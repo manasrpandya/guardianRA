@@ -5,11 +5,15 @@ extern void monitor_init(void);
 extern void monitor_start(void);
 #include "version.h"
 
+/* Explicit stack for the monitor task (4 KiB) */
+static UB app_stack[4096];
+
 LOCAL void app_task(INT stacd, void *exinf);
 LOCAL ID app_tskid;
 LOCAL T_CTSK ctsk = {
     .itskpri = 10,
-    .stksz   = 4096,
+    .stksz   = sizeof(app_stack),
+    .stkptr  = app_stack,
     .task    = app_task,
     .tskatr  = TA_HLNG | TA_RNG3,
 };
