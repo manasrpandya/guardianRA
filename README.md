@@ -41,6 +41,42 @@ On boot, T‑Monitor prints periodic anomaly scores. The offline export step pla
 - `firmware/jlink/` — Example J‑Link script for flashing after a build.
 - `run.sh` — Convenience script that invokes the offline demo end‑to‑end.
 
+## Output Format
+
+The system generates two types of output for each monitoring cycle:
+
+1. **Human-Readable Logs** (T-Monitor):
+   ```
+   [µSentinel] t=3355779 ms | err=300.827 ema=281.274 thr=1.200 | AE=ANOM HEUR=ANOM | ctx=77887 isr=18593 mem=205575/524288 | anom_total=27
+   ```
+   - `t=3355779 ms`: Timestamp in milliseconds since boot
+   - `err=300.827`: Autoencoder reconstruction error (higher = more anomalous)
+   - `ema=281.274`: Exponential moving average of the error
+   - `thr=1.200`: Error threshold for anomaly detection
+   - `AE=ANOM`: Autoencoder anomaly flag (ANOM/ok)
+   - `HEUR=ANOM`: Heuristic anomaly flag (ANOM/ok)
+   - `ctx=77887`: Context switch count
+   - `isr=18593`: ISR count
+   - `mem=205575/524288`: Free/Total memory in bytes
+   - `anom_total=27`: Total anomalies detected so far
+
+2. **CSV Logs** (for analysis):
+   ```
+   time_ms,err,ema,thr,ae_label,heur_label,ctx_switches,isr_count,mem_free,mem_total,f0,f1,f2,f3,f4,f5
+   3355779,300.827,281.274,1.200,1,1,77887,18593,205575,524288,1.711,1.810,1.908,2.004,2.098,2.191
+   ```
+   - `time_ms`: Timestamp in milliseconds
+   - `err`: Raw reconstruction error
+   - `ema`: Exponential moving average of error
+   - `thr`: Anomaly threshold
+   - `ae_label`: 1 if autoencoder detected anomaly, else 0
+   - `heur_label`: 1 if heuristic detected anomaly, else 0
+   - `ctx_switches`: Number of context switches
+   - `isr_count`: Number of interrupts
+   - `mem_free`: Free memory in bytes
+   - `mem_total`: Total available memory
+   - `f0-f5`: First 6 feature values (normalized)
+
 ## License
 
 MIT — see `LICENSE`.
