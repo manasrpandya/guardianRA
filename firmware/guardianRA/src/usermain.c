@@ -5,8 +5,22 @@ extern void monitor_init(void);
 extern void monitor_start(void);
 #include "version.h"
 
-/* Explicit stack for the monitor task (4 KiB) */
-static UB app_stack[4096];
+/* Fallbacks in case attributes are not defined by the port headers */
+#ifndef TA_USERSTACK
+#define TA_USERSTACK 0
+#endif
+#ifndef TA_FPU
+#define TA_FPU 0
+#endif
+
+#ifdef TA_RNG0
+#define MSENTINEL_TASK_ATTR (TA_HLNG | TA_RNG0 | TA_USERSTACK | TA_FPU)
+#else
+#define MSENTINEL_TASK_ATTR (TA_HLNG | TA_RNG3 | TA_USERSTACK | TA_FPU)
+#endif
+
+/* Explicit stack for the monitor task (8 KiB), 8-byte aligned */
+static UB __attribute__((aligned(8))) app_stack[8192];
 
 LOCAL void app_task(INT stacd, void *exinf);
 LOCAL ID app_tskid;
@@ -15,7 +29,8 @@ LOCAL T_CTSK ctsk = {
     .stksz   = sizeof(app_stack),
     .stkptr  = app_stack,
     .task    = app_task,
-    .tskatr  = TA_HLNG | TA_RNG3,
+    /* Task attributes chosen based on platform: RNG0 if available, else RNG3 */
+    .tskatr  = MSENTINEL_TASK_ATTR,
 };
 
 LOCAL void app_task(INT stacd, void *exinf) {
