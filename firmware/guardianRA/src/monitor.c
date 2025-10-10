@@ -1,6 +1,7 @@
 #include <tk/tkernel.h>
 #include <tm/tmonitor.h>
 #include <string.h>
+#include <stdint.h>
 
 #include "config.h"
 #include "log.h"
@@ -118,9 +119,17 @@ void monitor_start(void)
             events_record(kind, (uint32_t)t_ms, err, g_err_ema, ae_anom, heur_anom);
         }
 
-        /* Human-readable log */
-        tm_printf((UB*)"[µSentinel] t=%lu ms | err=%.6f ema=%.6f thr=%.6f | AE=%s HEUR=%s | ctx=%lu isr=%lu mem=%lu/%lu | anom_total=%lu\n",
-                  t_ms, err, g_err_ema, g_anomaly_threshold,
+        /* Format fixed-point floats (Q.3) to avoid %f in tm_printf */
+        int err_i, err_f, ema_i, ema_f, thr_i, thr_f;
+        {
+            int32_t fx = (int32_t)(err * 1000.0f); err_i = fx / 1000; err_f = fx % 1000; if (err_f < 0) err_f = -err_f;
+            fx = (int32_t)(g_err_ema * 1000.0f);    ema_i = fx / 1000; ema_f = fx % 1000; if (ema_f < 0) ema_f = -ema_f;
+            fx = (int32_t)(g_anomaly_threshold * 1000.0f); thr_i = fx / 1000; thr_f = fx % 1000; if (thr_f < 0) thr_f = -thr_f;
+        }
+
+        /* Human-readable log (no %f) */
+        tm_printf((UB*)"[µSentinel] t=%lu ms | err=%d.%03d ema=%d.%03d thr=%d.%03d | AE=%s HEUR=%s | ctx=%lu isr=%lu mem=%lu/%lu | anom_total=%lu\n",
+                  t_ms, err_i, err_f, ema_i, ema_f, thr_i, thr_f,
                   ae_anom ? (UB*)"ANOM" : (UB*)"ok",
                   heur_anom ? (UB*)"ANOM" : (UB*)"ok",
                   (unsigned long)ds.ctx_switches, (unsigned long)ds.isr_count,
@@ -128,12 +137,22 @@ void monitor_start(void)
                   g_anom_count);
 
 #if ENABLE_CSV_LOG
-        /* Compact CSV line: time_ms,err,thr,ae_label,heur_label,first few features */
-        tm_printf((UB*)"%lu,%.6f,%.6f,%.6f,%d,%d,%lu,%lu,%lu,%lu,%.5f,%.5f,%.5f,%.5f,%.5f,%.5f\n",
-                  t_ms, err, g_err_ema, g_anomaly_threshold, ae_anom, heur_anom,
+        /* Compact CSV line using fixed-point (Q.3) for floats */
+        int f0_i, f0_f, f1_i, f1_f, f2_i, f2_f, f3_i, f3_f, f4_i, f4_f, f5_i, f5_f;
+        {
+            int32_t fx;
+            fx = (int32_t)(feat[0] * 1000.0f); f0_i = fx / 1000; f0_f = fx % 1000; if (f0_f < 0) f0_f = -f0_f;
+            fx = (int32_t)(feat[1] * 1000.0f); f1_i = fx / 1000; f1_f = fx % 1000; if (f1_f < 0) f1_f = -f1_f;
+            fx = (int32_t)(feat[2] * 1000.0f); f2_i = fx / 1000; f2_f = fx % 1000; if (f2_f < 0) f2_f = -f2_f;
+            fx = (int32_t)(feat[3] * 1000.0f); f3_i = fx / 1000; f3_f = fx % 1000; if (f3_f < 0) f3_f = -f3_f;
+            fx = (int32_t)(feat[4] * 1000.0f); f4_i = fx / 1000; f4_f = fx % 1000; if (f4_f < 0) f4_f = -f4_f;
+            fx = (int32_t)(feat[5] * 1000.0f); f5_i = fx / 1000; f5_f = fx % 1000; if (f5_f < 0) f5_f = -f5_f;
+        }
+        tm_printf((UB*)"%lu,%d.%03d,%d.%03d,%d.%03d,%d,%d,%lu,%lu,%lu,%lu,%d.%03d,%d.%03d,%d.%03d,%d.%03d,%d.%03d,%d.%03d\n",
+                  t_ms, err_i, err_f, ema_i, ema_f, thr_i, thr_f, ae_anom, heur_anom,
                   (unsigned long)ds.ctx_switches, (unsigned long)ds.isr_count,
                   (unsigned long)ds.mem_free_bytes, (unsigned long)ds.mem_total_bytes,
-                  feat[0], feat[1], feat[2], feat[3], feat[4], feat[5]);
+                  f0_i, f0_f, f1_i, f1_f, f2_i, f2_f, f3_i, f3_f, f4_i, f4_f, f5_i, f5_f);
 #endif
 
         g_sample_idx++;
